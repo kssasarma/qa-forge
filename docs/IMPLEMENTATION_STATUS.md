@@ -32,7 +32,7 @@ one commit per checked group).
 - [x] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
 - [x] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
 - [x] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
-- [ ] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
+- [x] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
 - [ ] Phase 7 — `qa-forge-bootstrap` CLI commands
 - [ ] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
 - [ ] Phase 9 — `qa-forge-dashboard` React SPA
@@ -84,6 +84,18 @@ one commit per checked group).
   (`spring-ai-starter-model-anthropic`). Maven's `<optional>` only affects propagation to
   downstream consumers, not this module's own classpath — a second starter here would still
   autoconfigure a second `ChatModel` bean and fight the `@Primary` one in `LlmConfig`.
+
+- **`TestRegistryPort#findByStatus`**: new method generalizing `findActive` — `GET
+  /api/v1/tests?status=OBSOLETE` (§12.5) needs to list obsolete tests too, which `findActive`
+  alone (fixed to ACTIVE) cannot serve.
+- **Webhook → analyze/regression request construction**: PRD §12.3/§12.4 specify webhook event
+  routing but a bare `pull_request`/`Merge Request Hook` payload carries no target app URL,
+  OpenAPI spec URL, or output directory. `WebhookProperties` (`qaforge.webhook.*`, not in PRD
+  §15's config reference) supplies these for fully-automated triggers; output directory
+  defaults to `{outputBaseDirectory}/{repo-slug}`.
+- **`GET /api/v1/export`'s `layer` query param**: accepted but not applied — `TestFileStorePort
+  #exportZip`'s signature (fixed by PRD §9.1.2) takes only a repository, so layer-filtered
+  export isn't wired through.
 
 ## Known limitations at delivery time
 

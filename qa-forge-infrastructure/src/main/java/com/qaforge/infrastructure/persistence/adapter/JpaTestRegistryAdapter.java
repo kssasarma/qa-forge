@@ -52,7 +52,12 @@ public class JpaTestRegistryAdapter implements TestRegistryPort {
 
     @Override
     public List<TestCase> findActive(String repository) {
-        return testCaseRepository.findByRepositoryAndStatus(repository, TestCase.STATUS_ACTIVE)
+        return findByStatus(repository, TestCase.STATUS_ACTIVE);
+    }
+
+    @Override
+    public List<TestCase> findByStatus(String repository, String status) {
+        return testCaseRepository.findByRepositoryAndStatus(repository, status)
             .stream().map(this::toDomain).toList();
     }
 

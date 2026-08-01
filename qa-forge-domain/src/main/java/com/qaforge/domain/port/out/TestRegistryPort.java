@@ -13,13 +13,18 @@ import java.util.Optional;
  * <p>The {@code saveRun}/{@code findRun}/{@code findRuns} methods are a documented extension
  * beyond PRD §9.1.2's port list: sections 12.6/12.7 require querying persisted runs, and the
  * glossary defines the registry as covering "run history" — so run persistence belongs on this
- * port rather than introducing infrastructure access from the application layer.
+ * port rather than introducing infrastructure access from the application layer. Likewise
+ * {@code findByStatus} generalizes {@code findActive} so {@code GET /api/v1/tests}
+ * (PRD §12.5) can list {@code OBSOLETE} tests too, which the fixed-ACTIVE {@code findActive}
+ * alone cannot serve.
  */
 public interface TestRegistryPort {
 
     void saveAll(List<GeneratedTest> tests, String prNumber, String repository, String headSha);
 
     List<TestCase> findActive(String repository);
+
+    List<TestCase> findByStatus(String repository, String status);
 
     List<TestCase> findByPr(String prNumber, String repository);
 
