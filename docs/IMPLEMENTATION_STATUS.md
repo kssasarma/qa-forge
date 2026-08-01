@@ -28,7 +28,7 @@ one commit per checked group).
 
 - [x] Phase 0 — Repo scaffold (parent + module POMs, structure)
 - [x] Phase 1 — `qa-forge-domain` (records, ports, exceptions)
-- [ ] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
+- [x] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
 - [ ] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
 - [ ] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
 - [ ] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
@@ -56,6 +56,14 @@ one commit per checked group).
   (§12.6/12.7) and consistent with the glossary's definition of "Registry" as covering run
   history; keeps run persistence behind a port instead of the application layer reaching into
   infrastructure directly.
+- **`OpenApiSpecPort`**: new domain out-port, same justification — PRD §9.2.6 requires the
+  RestAssured generation agent to receive "the relevant OpenAPI operation JSON", but §9.1.2
+  names no port for it.
+- **MCP Java package**: PRD §13.2 writes `org.springframework.ai.mcp.client.SyncMcpToolCallbackProvider`
+  and `org.springframework.ai.mcp.client.McpClient`/`StdioClientTransport`. The real Spring AI
+  `2.0.0` / MCP SDK `2.0.0` artifacts place these under `org.springframework.ai.mcp.*` (no
+  `.client` segment) and `io.modelcontextprotocol.client.*` respectively — verified by
+  inspecting the actual downloaded jars. Code uses the real packages.
 
 ## Known limitations at delivery time
 
