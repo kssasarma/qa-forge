@@ -26,8 +26,8 @@ one commit per checked group).
 
 ## Modules
 
-- [ ] Phase 0 — Repo scaffold (parent + module POMs, structure)
-- [ ] Phase 1 — `qa-forge-domain` (records, ports, exceptions)
+- [x] Phase 0 — Repo scaffold (parent + module POMs, structure)
+- [x] Phase 1 — `qa-forge-domain` (records, ports, exceptions)
 - [ ] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
 - [ ] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
 - [ ] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
@@ -40,6 +40,22 @@ one commit per checked group).
 - [ ] Phase 11 — Tests (unit, slice, integration)
 - [ ] Phase 12 — Build verification
 - [ ] Phase 13 — PR opened
+
+## Deviations from the PRD (justified by real artifact availability)
+
+- **Testcontainers**: PRD §6 pins `1.20.4`; Spring Boot `4.1.0`'s BOM manages `2.0.5`, which
+  renamed the JUnit/Postgres modules to `testcontainers-junit-jupiter` /
+  `testcontainers-postgresql`. Used the BOM-managed version and artifact IDs instead of forcing
+  an incompatible, unmanaged older version.
+- **`spring-retry`**: not part of `spring-boot-dependencies:4.1.0`'s dependency management;
+  pinned explicitly to `2.0.13` (latest at implementation time) in the parent POM.
+- **Spring Shell test starter**: PRD doesn't name it explicitly; the real artifact in
+  `spring-shell-dependencies:4.0.3` is `spring-shell-starter-test` (not `spring-shell-testing`).
+- **`TestRegistryPort`**: extended with `saveRun`/`findRun`/`findRuns` beyond PRD §9.1.2's
+  literal list — required by the `GET /api/v1/runs` and `GET /api/v1/runs/{runId}` endpoints
+  (§12.6/12.7) and consistent with the glossary's definition of "Registry" as covering run
+  history; keeps run persistence behind a port instead of the application layer reaching into
+  infrastructure directly.
 
 ## Known limitations at delivery time
 
