@@ -35,7 +35,7 @@ one commit per checked group).
 - [x] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
 - [x] Phase 7 — `qa-forge-bootstrap` CLI commands
 - [x] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
-- [ ] Phase 9 — `qa-forge-dashboard` React SPA
+- [x] Phase 9 — `qa-forge-dashboard` React SPA
 - [ ] Phase 10 — Docker Compose + CI workflows + docs
 - [ ] Phase 11 — Tests (unit, slice, integration)
 - [ ] Phase 12 — Build verification
@@ -156,6 +156,23 @@ Verified working end-to-end: app starts clean on `dev` profile (H2), Flyway migr
 `test_cases`/`test_runs`/`test_run_items` on a real profile, Spring Data JPA repositories
 resolve, `GET /actuator/health` returns `UP`, and `GET /api/v1/tests` (HTTP Basic auth) returns
 the exact paginated JSON shape from PRD §12.5.
+
+- **`tailwindcss`/`@tailwindcss/vite`**: PRD §6 pins `4.0.0` exactly. That exact version's Vite
+  plugin crashes (`Cannot convert undefined or null to object`) on *any* CSS file that contains
+  `@import "tailwindcss";` — reproduced with a one-line CSS file, confirming it's not project
+  configuration. Bumped to `4.0.17` (latest `4.0.x` patch at implementation time, same major.minor,
+  bug-fixes only) to get a working build.
+- **`HashRouter` instead of `BrowserRouter`**: PRD §8's "dashboard build integration" note has
+  Spring Boot serve the SPA as plain static resources with no server-side fallback route for
+  deep links (e.g. `GET /coverage` would 404, not serve `index.html`). Hash-based routing keeps
+  every navigation a request for `/`, avoiding the need for extra server-side routing
+  configuration not specified anywhere in the PRD.
+- **No standalone run-detail page/route**: PRD §8 lists `TestDetailPage.tsx` but no
+  `RunDetailPage.tsx`, even though `GET /api/v1/runs/{runId}` (§12.6) implies one exists. Run
+  rows expand in place on `RunsPage` instead of navigating to a new route.
+- **`TestDetailPage`'s execution timeline is client-assembled**: there's no
+  "execution history for one test" endpoint (only run-level detail, §12.6), so the page fetches
+  recent runs and filters each run's items by file name.
 
 ## Known limitations at delivery time
 

@@ -13,6 +13,7 @@ target/
 # Node / dashboard
 qa-forge-dashboard/node_modules/
 qa-forge-dashboard/dist/
+qa-forge-dashboard/*.tsbuildinfo
 qa-forge-bootstrap/src/main/resources/static/**
 !qa-forge-bootstrap/src/main/resources/static/.gitkeep
 
