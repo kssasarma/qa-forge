@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: qaforge
+      POSTGRES_USER: qaforge
+      POSTGRES_PASSWORD: qaforge
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qaforge -d qaforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  qa-forge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ["8080:8080"]
+    volumes:
+      - ./tests:/var/qa-forge/tests
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      QAFORGE_DB_URL: jdbc:postgresql://postgres:5432/qaforge
+      QAFORGE_DB_USER: qaforge
+      QAFORGE_DB_PASSWORD: qaforge
+      QAFORGE_DB_DRIVER: org.postgresql.Driver
+      QAFORGE_DB_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      # Set exactly one LLM provider block (PRD §7.6) — this compose file assumes the default
+      # Anthropic starter that ships in qa-forge-bootstrap/pom.xml.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      QAFORGE_API_PASSWORD: ${QAFORGE_API_PASSWORD}
+      QAFORGE_WEBHOOK_TARGET_BASE_URL: ${QAFORGE_WEBHOOK_TARGET_BASE_URL}
+      QAFORGE_OUTPUT_DIR: /var/qa-forge/tests
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

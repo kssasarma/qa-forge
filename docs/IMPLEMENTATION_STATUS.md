@@ -36,7 +36,7 @@ one commit per checked group).
 - [x] Phase 7 — `qa-forge-bootstrap` CLI commands
 - [x] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
 - [x] Phase 9 — `qa-forge-dashboard` React SPA
-- [ ] Phase 10 — Docker Compose + CI workflows + docs
+- [x] Phase 10 — Docker Compose + CI workflows + docs
 - [ ] Phase 11 — Tests (unit, slice, integration)
 - [ ] Phase 12 — Build verification
 - [ ] Phase 13 — PR opened
@@ -173,6 +173,21 @@ the exact paginated JSON shape from PRD §12.5.
 - **`TestDetailPage`'s execution timeline is client-assembled**: there's no
   "execution history for one test" endpoint (only run-level detail, §12.6), so the page fetches
   recent runs and filters each run's items by file name.
+
+- **Added a real `Dockerfile`**: PRD §20.2's `docker-compose.yml` sketch mounts a pre-built
+  jar into a bare `eclipse-temurin:21-jre-alpine` image — no Node.js, so the Playwright MCP
+  server (`npx @playwright/mcp`) would have nothing to run on inside that container, directly
+  contradicting §22 C-07's own mitigation ("provide Docker image with both runtimes"). Added a
+  multi-stage `Dockerfile` (dashboard build → Maven build → Temurin 21 JRE + Node.js 20
+  runtime image) and pointed `docker-compose.yml` at it.
+- **Consumer workflow example relocated**: PRD §20.3's example lives at
+  `.github/workflows/qa-forge.yml`, but that workflow is meant for a *different* repository
+  (a team consuming QA Forge) — placing it in this repo's own `.github/workflows/` would make
+  GitHub Actions try to run it here, against secrets and a `qa-forge.internal` URL that don't
+  exist in this repo. Moved to `docs/consumer-workflow-example.yml` as reference material.
+- **Dockerfile/docker-compose not execution-verified**: no Docker daemon is available in this
+  implementation environment (client present, no `dockerd`), so the multi-stage build was
+  reviewed by inspection only, not actually run.
 
 ## Known limitations at delivery time
 

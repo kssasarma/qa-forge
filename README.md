@@ -56,11 +56,21 @@ wired against the vendor-neutral `ChatModel` / `ChatClient` types only.
 ## Docker Compose (local)
 
 ```bash
-docker compose up
+docker compose up --build
 ```
 
+Builds the image from the root `Dockerfile`, which bundles both runtimes QA Forge needs
+(Java 21 + Node.js 20 — see PRD §22 C-07) rather than mounting a jar into a bare JRE image.
 See `docker-compose.yml` for required environment variables (database + exactly one LLM
 provider block).
+
+## CI
+
+`.github/workflows/build.yml` builds the dashboard, runs its Vitest suite, then builds and
+tests every Maven module against a real PostgreSQL service container. See
+`docs/consumer-workflow-example.yml` for the workflow a team calling QA Forge's API would add
+to their *own* repository (PRD §20.3) — it isn't meant to run in this repository, so it lives
+under `docs/` rather than `.github/workflows/`.
 
 ## CLI
 

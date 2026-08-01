@@ -1,0 +1,51 @@
+name: Build, Test, Package
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: qaforge_test
+          POSTGRES_USER: qaforge
+          POSTGRES_PASSWORD: qaforge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U qaforge -d qaforge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '21', distribution: 'temurin', cache: maven }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20.18.0', cache: 'npm', cache-dependency-path: qa-forge-dashboard/package-lock.json }
+
+      - name: Build dashboard
+        run: cd qa-forge-dashboard && npm ci && npm run build
+
+      - name: Dashboard unit tests
+        run: cd qa-forge-dashboard && npx vitest run
+
+      - name: Maven build + test
+        # Dashboard static resources were already built by the "Build dashboard" step above,
+        # so the -Pdashboard profile (which re-runs npm build via exec-maven-plugin) isn't
+        # needed here — it would just redo the same work.
+        run: mvn -B verify -Dspring.profiles.active=test
+        env:
+          QAFORGE_DB_URL: jdbc:postgresql://localhost:5432/qaforge_test
+          QAFORGE_DB_USER: qaforge
+          QAFORGE_DB_PASSWORD: qaforge
+          QAFORGE_DB_DRIVER: org.postgresql.Driver
+          QAFORGE_DB_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+          MCP_PLAYWRIGHT_ENABLED: "false"
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-forge-jar
+          path: qa-forge-bootstrap/target/qa-forge-bootstrap.jar
