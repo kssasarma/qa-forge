@@ -29,7 +29,7 @@ one commit per checked group).
 - [x] Phase 0 — Repo scaffold (parent + module POMs, structure)
 - [x] Phase 1 — `qa-forge-domain` (records, ports, exceptions)
 - [x] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
-- [ ] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
+- [x] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
 - [ ] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
 - [ ] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
 - [ ] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
@@ -64,6 +64,11 @@ one commit per checked group).
   `2.0.0` / MCP SDK `2.0.0` artifacts place these under `org.springframework.ai.mcp.*` (no
   `.client` segment) and `io.modelcontextprotocol.client.*` respectively — verified by
   inspecting the actual downloaded jars. Code uses the real packages.
+
+- **JIRA description format**: `JiraAcAdapter` uses the JIRA v2 issue API (plain-text
+  `description`). JIRA Cloud's v3 API returns Atlassian Document Format (rich JSON) for the
+  same field instead — ADF parsing is not implemented; works as specified against JIRA
+  Server/Data Center.
 
 ## Known limitations at delivery time
 
