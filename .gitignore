@@ -1,0 +1,32 @@
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Node / dashboard
+qa-forge-dashboard/node_modules/
+qa-forge-dashboard/dist/
+qa-forge-bootstrap/src/main/resources/static/**
+!qa-forge-bootstrap/src/main/resources/static/.gitkeep
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Env
+.env
+.env.local
+
+# QA Forge runtime output
+/tmp/qa-forge-tests/
+playwright-report/
+test-results/
