@@ -33,7 +33,7 @@ one commit per checked group).
 - [x] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
 - [x] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
 - [x] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
-- [ ] Phase 7 — `qa-forge-bootstrap` CLI commands
+- [x] Phase 7 — `qa-forge-bootstrap` CLI commands
 - [ ] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
 - [ ] Phase 9 — `qa-forge-dashboard` React SPA
 - [ ] Phase 10 — Docker Compose + CI workflows + docs
@@ -96,6 +96,21 @@ one commit per checked group).
 - **`GET /api/v1/export`'s `layer` query param**: accepted but not applied — `TestFileStorePort
   #exportZip`'s signature (fixed by PRD §9.1.2) takes only a repository, so layer-filtered
   export isn't wired through.
+
+- **Spring Shell 4.0.3 command API**: PRD gives no code sketch for the CLI (unlike the other
+  modules). Spring Shell 4.0.3's real annotation model is `@Command`/`@Option`/`@Argument`/
+  `@CommandGroup`/`@EnableCommand` under `org.springframework.shell.core.command.annotation`
+  — a different, newer API than the classic `@ShellComponent`/`@ShellMethod` most Spring Shell
+  docs describe. Verified against the actual jar; each command class is a `@Component` (so
+  `@Command` methods get constructor-injected ports) registered via `@EnableCommand` in
+  `CliConfig`.
+- **`qa export` / `qa version`**: PRD §12.10 requires both, but §8's project structure only
+  lists `AnalyzeCommand`/`RegressionCommand`/`ListCommand`/`RunCommand` under `cli/`. Added
+  `ExportCommand`/`VersionCommand` to satisfy the CLI contract in full.
+- **`qa run` vs `qa regression`**: both call into the same test-execution machinery, but
+  `qa run` (PRD §12.10 lists it with only `--repo`/`--base-url`, no `--pr`) is implemented as a
+  direct local execution with no PR association and no VCS check posting — `qa regression`
+  goes through `RegressionUseCase`, which always fetches a PR to post status to.
 
 ## Known limitations at delivery time
 
