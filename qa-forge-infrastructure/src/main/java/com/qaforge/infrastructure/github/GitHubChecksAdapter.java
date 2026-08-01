@@ -13,15 +13,19 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Implements {@link VcsChecksPort} against the GitHub Check Runs API (PRD §12.10 G-13).
+ * GitHub Check Runs API implementation of the "checks" behavior (PRD §12.10 G-13). Does not
+ * implement {@link VcsChecksPort} directly — {@code VcsChecksRouter} is the single
+ * {@link VcsChecksPort} bean and dispatches to this or {@code GitLabChecksAdapter} by
+ * {@code PullRequest.vcsType()}, since a plain constructor-injected {@code VcsChecksPort}
+ * can't disambiguate between two implementations at wiring time.
  *
- * <p>{@code @Retryable} is applied directly to the three interface methods (not to a shared
- * private helper) because Spring's proxy-based AOP only intercepts calls that arrive through
- * the bean's proxy — a {@code this.someHelper()} call from within the class would silently
- * bypass retry entirely.
+ * <p>{@code @Retryable} is applied directly to these methods (not to a shared private helper)
+ * because Spring's proxy-based AOP only intercepts calls that arrive through the bean's proxy
+ * — a {@code this.someHelper()} call from within the class would silently bypass retry
+ * entirely.
  */
 @Component
-public class GitHubChecksAdapter implements VcsChecksPort {
+public class GitHubChecksAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubChecksAdapter.class);
 
@@ -36,19 +40,16 @@ public class GitHubChecksAdapter implements VcsChecksPort {
             .build();
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postPending(PullRequest pr, String checkName, String detailsUrl) {
         postCheckRun(pr, checkName, "in_progress", null, "Running", "QA Forge analysis is in progress.", detailsUrl);
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postSuccess(PullRequest pr, String checkName, String summary) {
         postCheckRun(pr, checkName, "completed", "success", "Passed", summary, null);
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postFailure(PullRequest pr, String checkName, String summary) {
         postCheckRun(pr, checkName, "completed", "failure", "Failed", summary, null);

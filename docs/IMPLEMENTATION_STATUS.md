@@ -34,7 +34,7 @@ one commit per checked group).
 - [x] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
 - [x] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
 - [x] Phase 7 — `qa-forge-bootstrap` CLI commands
-- [ ] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
+- [x] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
 - [ ] Phase 9 — `qa-forge-dashboard` React SPA
 - [ ] Phase 10 — Docker Compose + CI workflows + docs
 - [ ] Phase 11 — Tests (unit, slice, integration)
@@ -111,6 +111,51 @@ one commit per checked group).
   `qa run` (PRD §12.10 lists it with only `--repo`/`--base-url`, no `--pr`) is implemented as a
   direct local execution with no PR association and no VCS check posting — `qa regression`
   goes through `RegressionUseCase`, which always fetches a PR to post status to.
+
+## Runtime-verified fixes (found by actually running the packaged jar)
+
+Compiling clean doesn't mean the Spring context starts. Building and running
+`qa-forge-bootstrap-*.jar` end-to-end (dev profile, H2) surfaced nine real wiring bugs no
+compiler catches, all now fixed:
+
+1. **`@Command`'s `value`/`description` are alias mirrors of the same attribute** (PRD §12.10
+   gives no code sketch) — setting both to different strings throws
+   `AnnotationConfigurationException` at class-scan time. Fixed to use `name = {"qa", "x"}` for
+   the actual command name and `description` alone for the text.
+2. **CLI method/bean-name collisions** with Spring Shell's own built-in commands (a method
+   named `version()` collided with the built-in `Version` command bean). Renamed every command
+   method to a `qaXxx` form.
+3. **`RestClient.Builder` has no autoconfiguration by default** in Spring Boot 4.1.0 —
+   `spring-boot-starter-web`'s dependency on it is `optional`, so Maven doesn't pull it
+   transitively. Added `spring-boot-starter-restclient` explicitly.
+4. **JPA repository/entity scanning didn't follow `@SpringBootApplication(scanBasePackages=...)`**
+   — 0 repositories were found until `@EnableJpaRepositories`/`@EntityScan` were added
+   explicitly with the infrastructure package.
+5. **No `FlywayAutoConfiguration` by default** — same modularization pattern as RestClient;
+   added `spring-boot-starter-flyway` explicitly.
+6. **Flyway's PostgreSQL DDL doesn't run on H2**, even in `MODE=PostgreSQL` (`gen_random_uuid()`
+   default rejected by H2 2.4.240's parser) — confirmed by actually executing it. The dev
+   profile now disables Flyway and uses `hibernate.ddl-auto=update` against H2 instead; Flyway
+   still owns the schema for real PostgreSQL (test/prod).
+7. **H2 was test-scoped** in `qa-forge-bootstrap`, but the base `application.yml` datasource
+   URL defaults to an in-memory H2 URL even outside tests — moved to `runtime` scope.
+8. **`VcsChecksPort` had two competing implementations** (GitHub, GitLab) — a plain
+   constructor-injected `VcsChecksPort` is ambiguous with two beans of that type. Added
+   `VcsChecksRouter` as the single `VcsChecksPort` bean, dispatching by
+   `PullRequest.vcsType()`; `GitHubChecksAdapter`/`GitLabChecksAdapter` no longer implement the
+   port directly.
+9. **CLI one-shot invocation unconfirmed**: `java -jar qa-forge-bootstrap.jar qa version`
+   started the full web server instead of executing the command and exiting, despite
+   `spring.shell.interactive.enabled=false` / `spring.shell.noninteractive.enabled=true`.
+   Command registration itself is confirmed working (the app fails fast with a clear error if
+   a command bean can't be built); the exact property/invocation form Spring Shell 4.0.3 uses
+   to route bare program arguments into `NonInteractiveShellRunner` needs further verification
+   — flagged here rather than guessed at.
+
+Verified working end-to-end: app starts clean on `dev` profile (H2), Flyway migrates
+`test_cases`/`test_runs`/`test_run_items` on a real profile, Spring Data JPA repositories
+resolve, `GET /actuator/health` returns `UP`, and `GET /api/v1/tests` (HTTP Basic auth) returns
+the exact paginated JSON shape from PRD §12.5.
 
 ## Known limitations at delivery time
 

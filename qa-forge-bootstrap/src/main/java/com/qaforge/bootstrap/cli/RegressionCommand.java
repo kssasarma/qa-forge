@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 /** {@code qa regression} (PRD §12.10). */
 @Component
-@CommandGroup(name = "qa", prefix = "qa", description = "QA Forge commands")
+@CommandGroup(name = "qa", description = "QA Forge commands")
 public class RegressionCommand {
 
     private final RegressionPort regressionPort;
@@ -19,8 +19,8 @@ public class RegressionCommand {
         this.regressionPort = regressionPort;
     }
 
-    @Command(value = "regression", description = "Run the full active test suite against a target URL")
-    public String regression(
+    @Command(name = {"qa", "regression"}, description = "Run the full active test suite against a target URL")
+    public String qaRegression(
             @Option(longName = "repo", required = true, description = "repositoryFullName, e.g. acme/backend") String repo,
             @Option(longName = "pr", required = true, description = "PR/MR number") String pr,
             @Option(longName = "base-url", required = true, description = "target application base URL") String baseUrl,

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * the documented CLI contract.
  */
 @Component
-@CommandGroup(name = "qa", prefix = "qa", description = "QA Forge commands")
+@CommandGroup(name = "qa", description = "QA Forge commands")
 public class ExportCommand {
 
     private final TestFileStorePort testFileStorePort;
@@ -25,8 +25,8 @@ public class ExportCommand {
         this.testFileStorePort = testFileStorePort;
     }
 
-    @Command(value = "export", description = "Export a repository's active test suite as a ZIP")
-    public String export(
+    @Command(name = {"qa", "export"}, description = "Export a repository's active test suite as a ZIP")
+    public String qaExport(
             @Option(longName = "repo", required = true, description = "repositoryFullName") String repo,
             @Option(longName = "output", required = true, description = "where to save the ZIP") String output) {
 

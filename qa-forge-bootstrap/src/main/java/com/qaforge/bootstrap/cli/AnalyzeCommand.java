@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /** {@code qa analyze} (PRD §12.10). */
 @Component
-@CommandGroup(name = "qa", prefix = "qa", description = "QA Forge commands")
+@CommandGroup(name = "qa", description = "QA Forge commands")
 public class AnalyzeCommand {
 
     private final AnalyzePort analyzePort;
@@ -24,8 +24,8 @@ public class AnalyzeCommand {
         this.defaultOutputBaseDirectory = defaultOutputBaseDirectory;
     }
 
-    @Command(value = "analyze", description = "Analyze a PR/MR and generate tests")
-    public String analyze(
+    @Command(name = {"qa", "analyze"}, description = "Analyze a PR/MR and generate tests")
+    public String qaAnalyze(
             @Option(longName = "repo", required = true, description = "repositoryFullName, e.g. acme/backend") String repo,
             @Option(longName = "pr", required = true, description = "PR/MR number") String pr,
             @Option(longName = "base-url", required = true, description = "target application base URL") String baseUrl,

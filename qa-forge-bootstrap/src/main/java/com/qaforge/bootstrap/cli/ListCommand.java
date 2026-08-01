@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /** {@code qa list} (PRD §12.10). */
 @Component
-@CommandGroup(name = "qa", prefix = "qa", description = "QA Forge commands")
+@CommandGroup(name = "qa", description = "QA Forge commands")
 public class ListCommand {
 
     private final TestRegistryPort testRegistryPort;
@@ -21,8 +21,8 @@ public class ListCommand {
         this.testRegistryPort = testRegistryPort;
     }
 
-    @Command(value = "list", description = "List registered test cases")
-    public String list(
+    @Command(name = {"qa", "list"}, description = "List registered test cases")
+    public String qaList(
             @Option(longName = "repo", required = true, description = "repositoryFullName") String repo,
             @Option(longName = "status", defaultValue = "ACTIVE", description = "ACTIVE|OBSOLETE") String status,
             @Option(longName = "layer", defaultValue = "", description = "PLAYWRIGHT|REST_ASSURED|DB_VALIDATION") String layer) {

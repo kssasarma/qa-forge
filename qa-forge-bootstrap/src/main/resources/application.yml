@@ -1,0 +1,109 @@
+spring:
+  application:
+    name: qa-forge
+  datasource:
+    url: ${QAFORGE_DB_URL:jdbc:h2:mem:qaforgedev;DB_CLOSE_DELAY=-1}
+    username: ${QAFORGE_DB_USER:sa}
+    password: ${QAFORGE_DB_PASSWORD:}
+    driver-class-name: ${QAFORGE_DB_DRIVER:org.h2.Driver}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: ${QAFORGE_DB_DIALECT:org.hibernate.dialect.H2Dialect}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mvc:
+    static-path-pattern: /**
+    async:
+      request-timeout: 180000
+  web:
+    resources:
+      static-locations: classpath:/static/
+  # LLM provider: include ONLY the desired starter in qa-forge-bootstrap/pom.xml and configure here.
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: ${ANTHROPIC_MODEL:claude-sonnet-4-6}
+  security:
+    user:
+      name: ${QAFORGE_API_USER:qaforge}
+      password: ${QAFORGE_API_PASSWORD:changeme}
+      roles: API
+  threads:
+    virtual:
+      enabled: false
+  shell:
+    interactive:
+      enabled: false
+    noninteractive:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+    env:
+      additional-keys-to-sanitize: token,api-key,webhook-secret,webhook-token,password
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+
+qaforge:
+  github:
+    base-url: https://api.github.com
+    token: ${GITHUB_TOKEN:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
+  gitlab:
+    base-url: ${GITLAB_BASE_URL:https://gitlab.com}
+    token: ${GITLAB_TOKEN:}
+    webhook-token: ${GITLAB_WEBHOOK_TOKEN:}
+  jira:
+    enabled: ${JIRA_ENABLED:false}
+    base-url: ${JIRA_BASE_URL:}
+    token: ${JIRA_TOKEN:}
+    project-key: ${JIRA_PROJECT_KEY:}
+  webhook:
+    target-app-base-url: ${QAFORGE_WEBHOOK_TARGET_BASE_URL:}
+    openapi-spec-url: ${QAFORGE_WEBHOOK_OPENAPI_SPEC_URL:}
+    output-base-directory: ${QAFORGE_OUTPUT_DIR:/tmp/qa-forge-tests}
+  mcp:
+    playwright:
+      enabled: ${MCP_PLAYWRIGHT_ENABLED:true}
+      command: "npx"
+      args:
+        - "@playwright/mcp@latest"
+        - "--headless"
+        - "--output-dir"
+        - "${PLAYWRIGHT_TRACES_DIR:/tmp/playwright-traces}"
+      connect-timeout-ms: 10000
+      execution-timeout-ms: 120000
+      max-tool-calls: 50
+  regression:
+    pass-rate-threshold: ${QAFORGE_PASS_RATE_THRESHOLD:90.0}
+    max-existing-tests-per-run: 100
+  generation:
+    max-scenarios-per-pr: 10
+    output-base-directory: ${QAFORGE_OUTPUT_DIR:/tmp/qa-forge-tests}
+    playwright-config-template: "classpath:templates/playwright.config.ts.template"
+  async:
+    webhook-thread-pool-size: ${QAFORGE_WEBHOOK_THREADS:4}
+  ai:
+    multi-provider:
+      enabled: ${QAFORGE_MULTI_PROVIDER:false}

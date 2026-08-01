@@ -14,13 +14,15 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 /** Implements {@link TestFileStorePort} on the local filesystem, per PRD §14.3/§14.4. */
 @Component
 public class LocalTestFileStore implements TestFileStorePort {
 
-    private static final String PLAYWRIGHT_CONFIG = """
+    /** Used only if the configured template resource (§15.1) can't be read. */
+    private static final String FALLBACK_PLAYWRIGHT_CONFIG = """
         import { defineConfig, devices } from '@playwright/test';
 
         export default defineConfig({
@@ -38,9 +40,14 @@ public class LocalTestFileStore implements TestFileStorePort {
         """;
 
     private final String outputBaseDirectory;
+    private final Resource playwrightConfigTemplate;
 
-    public LocalTestFileStore(@Value("${qaforge.generation.output-base-directory:/tmp/qa-forge-tests}") String outputBaseDirectory) {
+    public LocalTestFileStore(
+            @Value("${qaforge.generation.output-base-directory:/tmp/qa-forge-tests}") String outputBaseDirectory,
+            @Value("${qaforge.generation.playwright-config-template:classpath:templates/playwright.config.ts.template}")
+            Resource playwrightConfigTemplate) {
         this.outputBaseDirectory = outputBaseDirectory;
+        this.playwrightConfigTemplate = playwrightConfigTemplate;
     }
 
     @Override
@@ -67,9 +74,17 @@ public class LocalTestFileStore implements TestFileStorePort {
         }
         try {
             Files.createDirectories(configPath.getParent());
-            Files.writeString(configPath, PLAYWRIGHT_CONFIG, StandardCharsets.UTF_8);
+            Files.writeString(configPath, readPlaywrightConfigTemplate(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new QaForgeException("Failed to write playwright.config.ts: " + configPath, e);
+        }
+    }
+
+    private String readPlaywrightConfigTemplate() {
+        try (var input = playwrightConfigTemplate.getInputStream()) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return FALLBACK_PLAYWRIGHT_CONFIG;
         }
     }
 

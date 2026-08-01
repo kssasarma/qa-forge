@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * command PRD §12.10 lists with only {@code --repo}/{@code --base-url} (no {@code --pr}).
  */
 @Component
-@CommandGroup(name = "qa", prefix = "qa", description = "QA Forge commands")
+@CommandGroup(name = "qa", description = "QA Forge commands")
 public class RunCommand {
 
     private final TestRegistryPort testRegistryPort;
@@ -29,8 +29,8 @@ public class RunCommand {
         this.testExecutionAgent = testExecutionAgent;
     }
 
-    @Command(value = "run", description = "Run the active suite locally against a target URL")
-    public String run(
+    @Command(name = {"qa", "run"}, description = "Run the active suite locally against a target URL")
+    public String qaRun(
             @Option(longName = "repo", required = true, description = "repositoryFullName") String repo,
             @Option(longName = "base-url", required = true, description = "target application base URL") String baseUrl) {
 

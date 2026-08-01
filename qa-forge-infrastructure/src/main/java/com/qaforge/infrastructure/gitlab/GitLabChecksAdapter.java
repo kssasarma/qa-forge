@@ -13,9 +13,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-/** Implements {@link VcsChecksPort} against the GitLab commit statuses API (PRD §12.10 G-13). */
+/**
+ * GitLab commit statuses API implementation of the "checks" behavior (PRD §12.10 G-13). Does
+ * not implement {@link VcsChecksPort} directly — see {@code GitHubChecksAdapter}'s javadoc for
+ * why {@code VcsChecksRouter} is the single {@link VcsChecksPort} bean instead.
+ */
 @Component
-public class GitLabChecksAdapter implements VcsChecksPort {
+public class GitLabChecksAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(GitLabChecksAdapter.class);
 
@@ -28,19 +32,16 @@ public class GitLabChecksAdapter implements VcsChecksPort {
             .build();
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postPending(PullRequest pr, String checkName, String detailsUrl) {
         postStatus(pr, checkName, "pending", "QA Forge analysis is in progress.", detailsUrl);
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postSuccess(PullRequest pr, String checkName, String summary) {
         postStatus(pr, checkName, "success", summary, null);
     }
 
-    @Override
     @Retryable(retryFor = RestClientException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void postFailure(PullRequest pr, String checkName, String summary) {
         postStatus(pr, checkName, "failed", summary, null);
