@@ -1,10 +1,7 @@
 package com.qaforge.application.agent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qaforge.application.agent.support.LlmJsonCaller;
 import com.qaforge.application.prompt.CodeAnalysisPrompts;
-import com.qaforge.domain.exception.LlmParseException;
 import com.qaforge.domain.model.CodeDiff;
 import com.qaforge.domain.model.ContextSummary;
 import com.qaforge.domain.model.ImpactAssessment;
@@ -19,12 +16,10 @@ public class CodeAnalysisAgent {
 
     private final ChatClient chatClient;
     private final LlmJsonCaller llmJsonCaller;
-    private final ObjectMapper objectMapper;
 
-    public CodeAnalysisAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller, ObjectMapper objectMapper) {
+    public CodeAnalysisAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller) {
         this.chatClient = chatClient;
         this.llmJsonCaller = llmJsonCaller;
-        this.objectMapper = objectMapper;
     }
 
     public ImpactAssessment run(ContextSummary contextSummary, CodeDiff diff) {
@@ -33,12 +28,7 @@ public class CodeAnalysisAgent {
     }
 
     private String buildUserMessage(ContextSummary contextSummary, CodeDiff diff) {
-        String contextJson;
-        try {
-            contextJson = objectMapper.writeValueAsString(contextSummary);
-        } catch (JsonProcessingException e) {
-            throw new LlmParseException(AGENT_NAME, String.valueOf(contextSummary), e);
-        }
+        String contextJson = llmJsonCaller.toJson(contextSummary, AGENT_NAME);
 
         return """
             ## ContextSummary

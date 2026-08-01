@@ -1,10 +1,8 @@
 package com.qaforge.application.agent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qaforge.application.agent.support.LlmJsonCaller;
 import com.qaforge.application.agent.support.NamingUtil;
 import com.qaforge.application.prompt.DbValidationGenerationPrompts;
-import com.qaforge.domain.exception.LlmParseException;
 import com.qaforge.domain.model.GeneratedTest;
 import com.qaforge.domain.model.TestLayer;
 import com.qaforge.domain.model.TestScenario;
@@ -20,26 +18,16 @@ public class DbValidationGenerationAgent {
 
     private final ChatClient chatClient;
     private final LlmJsonCaller llmJsonCaller;
-    private final ObjectMapper objectMapper;
 
-    public DbValidationGenerationAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller, ObjectMapper objectMapper) {
+    public DbValidationGenerationAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller) {
         this.chatClient = chatClient;
         this.llmJsonCaller = llmJsonCaller;
-        this.objectMapper = objectMapper;
     }
 
     public GeneratedTest generate(TestScenario scenario) {
-        String userMessage = serializeScenario(scenario) + "\n\n## Table\n" + scenario.dbTable();
+        String userMessage = llmJsonCaller.toJson(scenario, AGENT_NAME) + "\n\n## Table\n" + scenario.dbTable();
         String content = llmJsonCaller.callForText(chatClient, AGENT_NAME, DbValidationGenerationPrompts.SYSTEM, userMessage);
         String fileName = NamingUtil.pascalCase(scenario.dbTable()) + "DbValidationTest.java";
         return new GeneratedTest(scenario.id(), fileName, content, TestLayer.DB_VALIDATION, List.of(scenario.userFlow()));
-    }
-
-    private String serializeScenario(TestScenario scenario) {
-        try {
-            return objectMapper.writeValueAsString(scenario);
-        } catch (Exception e) {
-            throw new LlmParseException(AGENT_NAME, "scenario serialization failure", e);
-        }
     }
 }

@@ -1,11 +1,8 @@
 package com.qaforge.application.agent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qaforge.application.agent.dto.TestPlanningResponse;
 import com.qaforge.application.agent.support.LlmJsonCaller;
 import com.qaforge.application.prompt.TestPlanningPrompts;
-import com.qaforge.domain.exception.LlmParseException;
 import com.qaforge.domain.model.ImpactAssessment;
 import com.qaforge.domain.model.TestCase;
 import com.qaforge.domain.model.TestScenario;
@@ -22,12 +19,10 @@ public class TestPlanningAgent {
 
     private final ChatClient chatClient;
     private final LlmJsonCaller llmJsonCaller;
-    private final ObjectMapper objectMapper;
 
-    public TestPlanningAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller, ObjectMapper objectMapper) {
+    public TestPlanningAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller) {
         this.chatClient = chatClient;
         this.llmJsonCaller = llmJsonCaller;
-        this.objectMapper = objectMapper;
     }
 
     public List<TestScenario> run(ImpactAssessment impactAssessment, List<TestCase> existingTests) {
@@ -39,14 +34,8 @@ public class TestPlanningAgent {
     }
 
     private String buildUserMessage(ImpactAssessment impactAssessment, List<TestCase> existingTests) {
-        String impactJson;
-        String existingJson;
-        try {
-            impactJson = objectMapper.writeValueAsString(impactAssessment);
-            existingJson = objectMapper.writeValueAsString(existingTests.stream().map(ExistingTestSummary::from).toList());
-        } catch (JsonProcessingException e) {
-            throw new LlmParseException(AGENT_NAME, "serialization failure", e);
-        }
+        String impactJson = llmJsonCaller.toJson(impactAssessment, AGENT_NAME);
+        String existingJson = llmJsonCaller.toJson(existingTests.stream().map(ExistingTestSummary::from).toList(), AGENT_NAME);
 
         return """
             ## ImpactAssessment

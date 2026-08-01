@@ -1,10 +1,8 @@
 package com.qaforge.application.agent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qaforge.application.agent.support.LlmJsonCaller;
 import com.qaforge.application.agent.support.NamingUtil;
 import com.qaforge.application.prompt.RestAssuredGenerationPrompts;
-import com.qaforge.domain.exception.LlmParseException;
 import com.qaforge.domain.model.GeneratedTest;
 import com.qaforge.domain.model.TestLayer;
 import com.qaforge.domain.model.TestScenario;
@@ -21,14 +19,11 @@ public class RestAssuredGenerationAgent {
 
     private final ChatClient chatClient;
     private final LlmJsonCaller llmJsonCaller;
-    private final ObjectMapper objectMapper;
     private final OpenApiSpecPort openApiSpecPort;
 
-    public RestAssuredGenerationAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller,
-                                       ObjectMapper objectMapper, OpenApiSpecPort openApiSpecPort) {
+    public RestAssuredGenerationAgent(ChatClient chatClient, LlmJsonCaller llmJsonCaller, OpenApiSpecPort openApiSpecPort) {
         this.chatClient = chatClient;
         this.llmJsonCaller = llmJsonCaller;
-        this.objectMapper = objectMapper;
         this.openApiSpecPort = openApiSpecPort;
     }
 
@@ -38,17 +33,9 @@ public class RestAssuredGenerationAgent {
             : openApiSpecPort.fetchOperation(openApiSpecUrl, scenario.openApiOperationId())
                 .orElse("(operation " + scenario.openApiOperationId() + " not found in spec)");
 
-        String userMessage = serializeScenario(scenario) + "\n\n## OpenAPI Operation\n" + operationJson;
+        String userMessage = llmJsonCaller.toJson(scenario, AGENT_NAME) + "\n\n## OpenAPI Operation\n" + operationJson;
         String content = llmJsonCaller.callForText(chatClient, AGENT_NAME, RestAssuredGenerationPrompts.SYSTEM, userMessage);
         String fileName = NamingUtil.pascalCase(scenario.title()) + "Test.java";
         return new GeneratedTest(scenario.id(), fileName, content, TestLayer.REST_ASSURED, List.of(scenario.userFlow()));
-    }
-
-    private String serializeScenario(TestScenario scenario) {
-        try {
-            return objectMapper.writeValueAsString(scenario);
-        } catch (Exception e) {
-            throw new LlmParseException(AGENT_NAME, "scenario serialization failure", e);
-        }
     }
 }

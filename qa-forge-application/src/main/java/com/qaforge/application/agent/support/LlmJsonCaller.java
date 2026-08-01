@@ -20,6 +20,13 @@ import org.springframework.stereotype.Component;
  * attempt 2 → call LLM → try parse JSON
  *     if fails → throw LlmParseException(agentName, rawResponse)
  * </pre>
+ *
+ * <p>Owns a private Jackson 2 {@link ObjectMapper} instance rather than accepting one via
+ * dependency injection: Spring Boot 4.1.0 runs Jackson 3 ({@code tools.jackson.*}) as its
+ * primary JSON stack (see {@code spring-boot-starter-jackson}), so relying on Spring to
+ * inject a {@code com.fasterxml.jackson.databind.ObjectMapper} bean here would be fragile —
+ * this class's parsing needs (agent JSON responses) are unrelated to the web layer's
+ * serialization config anyway.
  */
 @Component
 public class LlmJsonCaller {
@@ -30,12 +37,20 @@ public class LlmJsonCaller {
     private static final String STRICT_JSON_SUFFIX =
         "\n\nIMPORTANT: Output ONLY valid JSON. No other text.";
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final MeterRegistry meterRegistry;
 
-    public LlmJsonCaller(ObjectMapper objectMapper, MeterRegistry meterRegistry) {
-        this.objectMapper = objectMapper;
+    public LlmJsonCaller(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
+    }
+
+    /** Serializes a value to JSON for inclusion in a user prompt. */
+    public String toJson(Object value, String agentName) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new LlmParseException(agentName, "serialization failure", e);
+        }
     }
 
     /**
