@@ -55,15 +55,18 @@
             <artifactId>spring-shell-starter</artifactId>
         </dependency>
 
-        <!-- LLM provider: swap this starter to change providers, see LlmConfig / section 7 -->
+        <!--
+          LLM provider — exactly ONE starter by default (PRD section 7.6): swap this single
+          dependency (and the matching spring.ai.* block in application.yml) to change
+          providers, with zero application code changes. Maven's <optional> flag does NOT
+          keep a second starter's autoconfiguration out of THIS module's own classpath (it
+          only affects downstream consumers), so don't add a second provider starter here
+          without also wiring section 7.5's MultiProviderLlmConfig + @Qualifier — otherwise
+          Spring Boot autoconfigures two competing ChatModel beans.
+        -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-anthropic</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-openai</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <dependency>

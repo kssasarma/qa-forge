@@ -31,7 +31,7 @@ one commit per checked group).
 - [x] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
 - [x] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
 - [x] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
-- [ ] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
+- [x] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
 - [ ] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
 - [ ] Phase 7 — `qa-forge-bootstrap` CLI commands
 - [ ] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
@@ -75,6 +75,15 @@ one commit per checked group).
   through the port — self-healing needs to return corrected source code for a healed test, and
   `TestExecutorPort#executeGenerated`'s fixed signature (`List<ExecutionResult>`) has no way to
   carry that. See the class javadoc for the full reasoning.
+
+- **`ChatOptionsBuilder`**: PRD §7.4 shows `ChatOptionsBuilder.builder().temperature(0.0).build()`.
+  The real Spring AI 2.0.0 API has no standalone `ChatOptionsBuilder` class — it's
+  `ChatOptions.builder()`, and `ChatClient.Builder#defaultOptions` takes the builder itself
+  (not a built `ChatOptions`). Verified against the real jar; `LlmConfig` uses the real call.
+- **Bootstrap LLM starter**: kept to exactly one default provider starter
+  (`spring-ai-starter-model-anthropic`). Maven's `<optional>` only affects propagation to
+  downstream consumers, not this module's own classpath — a second starter here would still
+  autoconfigure a second `ChatModel` bean and fight the `@Primary` one in `LlmConfig`.
 
 ## Known limitations at delivery time
 
