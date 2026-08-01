@@ -49,6 +49,13 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mcp</artifactId>
         </dependency>
+        <!-- Explicit (not transitive-only) Jackson 2, for the same reason as
+             qa-forge-application: Spring Boot 4.1.0's ambient Jackson bean is Jackson 3
+             (tools.jackson.*), so JSON handling here owns its own Jackson 2 instance. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

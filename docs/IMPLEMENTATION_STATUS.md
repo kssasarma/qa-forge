@@ -30,7 +30,7 @@ one commit per checked group).
 - [x] Phase 1 — `qa-forge-domain` (records, ports, exceptions)
 - [x] Phase 2 — `qa-forge-application` (prompts, 9 agents, orchestrator, use cases)
 - [x] Phase 3 — `qa-forge-infrastructure` VCS/JIRA adapters
-- [ ] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
+- [x] Phase 4 — `qa-forge-infrastructure` MCP + persistence + filesystem
 - [ ] Phase 5 — `qa-forge-bootstrap` config classes (LLM, Async, Security, OpenAPI)
 - [ ] Phase 6 — `qa-forge-bootstrap` REST controllers + DTOs + error handling
 - [ ] Phase 7 — `qa-forge-bootstrap` CLI commands
@@ -69,6 +69,12 @@ one commit per checked group).
   `description`). JIRA Cloud's v3 API returns Atlassian Document Format (rich JSON) for the
   same field instead — ADF parsing is not implemented; works as specified against JIRA
   Server/Data Center.
+
+- **`PlaywrightTestExecutor`**: implements `TestExecutorPort` by delegating to
+  `TestExecutionAgent`, but `AgentOrchestrator` calls `TestExecutionAgent` directly rather than
+  through the port — self-healing needs to return corrected source code for a healed test, and
+  `TestExecutorPort#executeGenerated`'s fixed signature (`List<ExecutionResult>`) has no way to
+  carry that. See the class javadoc for the full reasoning.
 
 ## Known limitations at delivery time
 
