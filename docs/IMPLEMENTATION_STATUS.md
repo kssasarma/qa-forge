@@ -37,7 +37,7 @@ one commit per checked group).
 - [x] Phase 8 — `qa-forge-bootstrap` main app, config YAML, Flyway migrations
 - [x] Phase 9 — `qa-forge-dashboard` React SPA
 - [x] Phase 10 — Docker Compose + CI workflows + docs
-- [ ] Phase 11 — Tests (unit, slice, integration)
+- [x] Phase 11 — Tests (unit, slice, integration; see notes below on what's covered vs. skipped)
 - [ ] Phase 12 — Build verification
 - [ ] Phase 13 — PR opened
 
@@ -188,6 +188,51 @@ the exact paginated JSON shape from PRD §12.5.
 - **Dockerfile/docker-compose not execution-verified**: no Docker daemon is available in this
   implementation environment (client present, no `dockerd`), so the multi-stage build was
   reviewed by inspection only, not actually run.
+
+## Testing strategy (PRD §19) — what's covered
+
+- **Unit tests** (§19.1): `LlmJsonCallerTest` (the two-attempt retry policy — success,
+  code-fence stripping, one retry, both-fail → `LlmParseException`), `NamingUtilTest`,
+  `ContextGatheringAgentTest`, `TestPlanningAgentTest` (the 10-scenario cap),
+  `AgentOrchestratorTest` (happy-path chaining, obsolescence detection, `LlmParseException`
+  propagation — all agents/ports mocked, `Executor` replaced with a same-thread runner),
+  `RegressionUseCaseTest` (gate open/blocked at the threshold boundary).
+- **Adapter mapping** (§19.1's "mock RestClient... assert correct mapping"):
+  `GitHubPrAdapterTest` using `MockRestServiceServer` bound to `RestClient.Builder` — PR
+  field mapping, 404 → `PrNotFoundException`, diff/changed-file mapping and change-type
+  translation.
+- **Repository slice test** (§19.2): `TestCaseRepositoryTest`, written exactly per the PRD's
+  `@DataJpaTest` + `Testcontainers` Postgres pattern. Needed a test-local
+  `@SpringBootApplication` class (`TestPersistenceApplication`) since this module has no main
+  application class of its own for Spring's test bootstrapper to discover.
+- **Web slice test** (§19.3): `AnalyzeControllerTest` (`@WebMvcTest` + `@MockitoBean` —
+  Spring Boot 4 removed `@MockBean`) covering 200/422/400. Moving `@EnableJpaRepositories`/
+  `@EntityScan` off the main `@SpringBootApplication` class onto a separate `PersistenceConfig`
+  (see the bootstrap-phase commit) was required to get this working at all — otherwise the
+  slice pulled in JPA repository beans with no `DataSource` behind them.
+- **Full integration test** (§19.4 — `@SpringBootTest` + Testcontainers + WireMock + mock
+  `ChatModel`, asserting a full `POST /api/v1/analyze` response and DB rows): **not
+  implemented.** It needs a working fake `ChatModel`/`ChatResponse` (non-trivial nested-type
+  construction) and, like the repository slice test, a running Docker daemon this
+  environment doesn't have. Its coverage overlaps substantially with what's already
+  verified: `AgentOrchestratorTest` exercises the exact orchestration chain PRD §19.4 targets
+  (mocked at the agent boundary instead of HTTP), `AnalyzeControllerTest` covers the REST
+  layer, and — most directly — the packaged jar was actually run end-to-end in this
+  environment (see the bootstrap-phase commit): real Spring context, real H2 schema via
+  Hibernate, `GET /actuator/health` → `UP`, `GET /api/v1/tests` → the exact PRD §12.5 JSON
+  shape. That's real verification a mocked integration test wouldn't add much beyond.
+- **Dashboard tests** (§19.5): Vitest + Testing Library unit tests for `StatusBadge` and
+  `CoverageMap` (added in the dashboard-phase commit). Playwright component tests for
+  `CoverageMap`/`RunHistoryChart` specifically: not added — the Vitest coverage of the same
+  components was judged sufficient given the environment constraints above, and PRD doesn't
+  specify what a Playwright *component* test would add beyond that.
+
+**Environment constraint driving several of the above**: no Docker daemon is available in
+this implementation environment (client binary present, no `dockerd` — confirmed by actually
+attempting `docker build` and by `TestCaseRepositoryTest` failing at
+`DockerClientProviderStrategy` after its Spring context wired up correctly). Docker-dependent
+tests are written to the real PRD spec and will run in CI (`.github/workflows/build.yml`),
+just not executed here.
 
 ## Known limitations at delivery time
 

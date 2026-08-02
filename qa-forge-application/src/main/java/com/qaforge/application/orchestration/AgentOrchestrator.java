@@ -144,7 +144,7 @@ public class AgentOrchestrator {
             testFileStorePort.writeAll(finalTests, request.testOutputDirectory());
             testRegistryAgent.persist(finalTests, request.prNumber(), request.repositoryFullName(), pr.headSha());
 
-            int markedObsolete = detectAndMarkObsolescence(diff, existingTests);
+            int markedObsolete = detectAndMarkObsolescence(diff, existingTests, request.repositoryFullName());
 
             ExecutionSummary executionSummary = summarize(executionOutcome.results());
             recordExecutionMetrics(request.repositoryFullName(), executionOutcome.results());
@@ -239,7 +239,7 @@ public class AgentOrchestrator {
         return tests.stream().map(t -> healed.getOrDefault(t.fileName(), t)).toList();
     }
 
-    private int detectAndMarkObsolescence(CodeDiff diff, List<TestCase> existingTests) {
+    private int detectAndMarkObsolescence(CodeDiff diff, List<TestCase> existingTests, String repository) {
         List<String> deletedPaths = diff.changedFiles().stream()
             .filter(f -> "DELETED".equalsIgnoreCase(f.changeType()))
             .map(f -> f.filePath().toLowerCase(Locale.ROOT))
@@ -256,7 +256,7 @@ public class AgentOrchestrator {
 
         testRegistryAgent.markObsolete(obsoleteFileNames);
         if (!obsoleteFileNames.isEmpty()) {
-            meterRegistry.counter("qaforge.tests.obsoleted", "repository", MDC.get("repository"))
+            meterRegistry.counter("qaforge.tests.obsoleted", "repository", repository)
                 .increment(obsoleteFileNames.size());
         }
         return obsoleteFileNames.size();

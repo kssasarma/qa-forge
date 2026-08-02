@@ -2,9 +2,7 @@ package com.qaforge.bootstrap;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * QA Forge entry point (PRD §5.1): a single Spring Boot application exposing the REST API,
@@ -15,15 +13,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * application/infrastructure modules' {@code @Service}/{@code @Component} beans and every
  * {@code @ConfigurationProperties} record across the codebase are picked up.
  *
- * <p>{@code @EnableJpaRepositories}/{@code @EntityScan} are explicit (not left to Spring Data
- * JPA's auto-configuration default) — verified by running the packaged jar that, unlike plain
- * component scanning, repository/entity scanning did not pick up
- * {@code com.qaforge.infrastructure.persistence.*} from {@code scanBasePackages} alone.
+ * <p>JPA repository/entity scanning is configured on {@link com.qaforge.bootstrap.config.PersistenceConfig},
+ * not here — putting {@code @EnableJpaRepositories}/{@code @EntityScan} directly on this
+ * primary {@code @SpringBootConfiguration} class made {@code @WebMvcTest} slices pull in JPA
+ * repository beans with no DataSource to back them (verified by an actual test failure); a
+ * separate {@code @Configuration} class isn't part of a web slice's minimal context.
  */
 @SpringBootApplication(scanBasePackages = "com.qaforge")
 @ConfigurationPropertiesScan("com.qaforge")
-@EnableJpaRepositories(basePackages = "com.qaforge.infrastructure.persistence.repository")
-@EntityScan(basePackages = "com.qaforge.infrastructure.persistence.entity")
 public class QaForgeApplication {
 
     public static void main(String[] args) {
