@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${QAFORGE_DB_URL}
+    username: ${QAFORGE_DB_USER}
+    password: ${QAFORGE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+logging:
+  pattern:
+    console: >
+      {"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%p",
+       "traceId":"%X{traceId}","spanId":"%X{spanId}",
+       "repository":"%X{repository}","prNumber":"%X{prNumber}",
+       "logger":"%logger","message":"%m"}%n

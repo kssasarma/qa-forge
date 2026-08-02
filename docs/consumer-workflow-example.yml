@@ -1,0 +1,48 @@
+# Example CI workflow for a TEAM USING QA Forge (PRD §20.3) — add this file to the target
+# application's own repository, not to QA Forge's. It is documentation, not something QA Forge
+# runs on itself, so it lives under docs/ rather than .github/workflows/ here.
+#
+# Required repo secrets on the consuming repo: QAFORGE_USER, QAFORGE_PASSWORD (HTTP Basic
+# credentials for the QA Forge instance, PRD §17.1).
+
+name: QA Forge
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  qa-forge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Regression gate (on ready_for_review)
+        if: github.event.action == 'ready_for_review'
+        run: |
+          RESULT=$(curl -sf \
+            -u ${{ secrets.QAFORGE_USER }}:${{ secrets.QAFORGE_PASSWORD }} \
+            -X POST https://qa-forge.internal/api/v1/regression \
+            -H "Content-Type: application/json" \
+            -d '{
+              "vcsType": "github",
+              "repositoryFullName": "${{ github.repository }}",
+              "prNumber": "${{ github.event.pull_request.number }}",
+              "targetAppBaseUrl": "https://staging.example.com"
+            }')
+          echo "$RESULT" | jq .
+          GATE=$(echo "$RESULT" | jq -r '.gateResult')
+          [ "$GATE" = "OPEN" ] || (echo "Regression gate BLOCKED" && exit 1)
+
+      - name: Generate new tests
+        run: |
+          curl -sf \
+            -u ${{ secrets.QAFORGE_USER }}:${{ secrets.QAFORGE_PASSWORD }} \
+            -X POST https://qa-forge.internal/api/v1/analyze \
+            -H "Content-Type: application/json" \
+            -d '{
+              "vcsType": "github",
+              "repositoryFullName": "${{ github.repository }}",
+              "prNumber": "${{ github.event.pull_request.number }}",
+              "targetAppBaseUrl": "https://staging.example.com",
+              "testOutputDirectory": "/var/qa-forge/tests/${{ github.repository }}",
+              "openApiSpecUrl": "https://staging.example.com/v3/api-docs"
+            }' | jq .

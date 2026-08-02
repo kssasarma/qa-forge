@@ -1,0 +1,21 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        dialect: ${QAFORGE_DB_DIALECT:org.hibernate.dialect.H2Dialect}
+  ai:
+    anthropic:
+      api-key: test-key-not-used
+
+qaforge:
+  mcp:
+    playwright:
+      enabled: false
+  github:
+    token: test-token
+    webhook-secret: test-secret
+  gitlab:
+    token: test-token
+    webhook-token: test-token
+  webhook:
+    target-app-base-url: http://localhost:8081
