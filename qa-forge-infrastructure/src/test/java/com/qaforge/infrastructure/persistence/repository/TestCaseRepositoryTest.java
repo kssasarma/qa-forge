@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.qaforge.infrastructure.persistence.entity.TestCaseEntity;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -44,6 +45,7 @@ class TestCaseRepositoryTest {
 
     private final TestCaseRepository repository;
 
+    @Autowired
     TestCaseRepositoryTest(TestCaseRepository repository) {
         this.repository = repository;
     }
