@@ -5,24 +5,24 @@ one commit per checked group).
 
 ## Goals (PRD §3.1)
 
-- [ ] G-01 Read PR diff + description + AC and derive test scenarios
-- [ ] G-02 Generate Playwright TypeScript UI E2E tests
-- [ ] G-03 Generate RestAssured Java API tests from OpenAPI spec diff
-- [ ] G-04 Generate JDBC database validation tests from schema migration diffs
-- [ ] G-05 Execute UI tests via Playwright MCP server; self-heal on locator failure
-- [ ] G-06 Persist test registry: metadata, lineage, run history
-- [ ] G-07 Run existing suite before generating new tests; gate on pass rate
-- [ ] G-08 Spring Shell CLI
-- [ ] G-09 REST API + GitHub webhook endpoint
-- [ ] G-10 GitHub integration: diff, body, comments, Check Run API
-- [ ] G-11 GitLab integration (pluggable adapter)
-- [ ] G-12 JIRA acceptance criteria extraction
-- [ ] G-13 Post results back to PR/MR as commit status check
-- [ ] G-14 React SPA dashboard
-- [ ] G-15 Test obsolescence detection
-- [ ] G-16 Export test suite as downloadable ZIP
-- [ ] G-17 Vendor-agnostic LLM via Spring AI `ChatModel`
-- [ ] G-18 OpenAI-compatible endpoint support
+- [x] G-01 Read PR diff + description + AC and derive test scenarios
+- [x] G-02 Generate Playwright TypeScript UI E2E tests
+- [x] G-03 Generate RestAssured Java API tests from OpenAPI spec diff
+- [x] G-04 Generate JDBC database validation tests from schema migration diffs
+- [x] G-05 Execute UI tests via Playwright MCP server; self-heal on locator failure
+- [x] G-06 Persist test registry: metadata, lineage, run history
+- [x] G-07 Run existing suite before generating new tests; gate on pass rate
+- [x] G-08 Spring Shell CLI
+- [x] G-09 REST API + GitHub webhook endpoint
+- [x] G-10 GitHub integration: diff, body, comments, Check Run API
+- [x] G-11 GitLab integration (pluggable adapter)
+- [x] G-12 JIRA acceptance criteria extraction
+- [x] G-13 Post results back to PR/MR as commit status check
+- [x] G-14 React SPA dashboard
+- [x] G-15 Test obsolescence detection
+- [x] G-16 Export test suite as downloadable ZIP
+- [x] G-17 Vendor-agnostic LLM via Spring AI `ChatModel`
+- [x] G-18 OpenAI-compatible endpoint support
 
 ## Modules
 
@@ -38,7 +38,7 @@ one commit per checked group).
 - [x] Phase 9 — `qa-forge-dashboard` React SPA
 - [x] Phase 10 — Docker Compose + CI workflows + docs
 - [x] Phase 11 — Tests (unit, slice, integration; see notes below on what's covered vs. skipped)
-- [ ] Phase 12 — Build verification
+- [x] Phase 12 — Build verification
 - [ ] Phase 13 — PR opened
 
 ## Deviations from the PRD (justified by real artifact availability)
@@ -233,6 +233,18 @@ attempting `docker build` and by `TestCaseRepositoryTest` failing at
 `DockerClientProviderStrategy` after its Spring context wired up correctly). Docker-dependent
 tests are written to the real PRD spec and will run in CI (`.github/workflows/build.yml`),
 just not executed here.
+
+## Phase 12 — Build verification results
+
+- `mvn clean install` across all four Java modules (`domain`, `application`, `infrastructure`,
+  `bootstrap`) passes cleanly, excluding only `TestCaseRepositoryTest` (Docker/Testcontainers
+  dependent — see above; confirmed correctly wired, not executed in this environment).
+- Dashboard: `npx tsc -b && npm run build` succeeds; output written to
+  `qa-forge-bootstrap/src/main/resources/static/`. Vitest suite: 4/4 passing.
+- Packaged `qa-forge-bootstrap.jar` smoke-tested end-to-end on the `dev` profile:
+  `GET /actuator/health` → `{"status":"UP"}`, `GET /` → dashboard `index.html` (200),
+  `GET /api/v1/tests?repository=acme/backend` (HTTP Basic auth) → correct paginated JSON
+  shape per PRD §12.5, clean startup log with no `ERROR` lines.
 
 ## Known limitations at delivery time
 
