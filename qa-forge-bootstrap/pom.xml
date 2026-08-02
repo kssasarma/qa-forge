@@ -126,6 +126,14 @@
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- PRD §19.4: stub the GitHub API for the full-pipeline integration test. Not BOM-managed;
+             pinned to the latest stable 3.x release (org.wiremock's 4.x line is still beta). -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>3.13.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

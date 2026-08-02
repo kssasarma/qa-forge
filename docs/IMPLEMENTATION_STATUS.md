@@ -210,17 +210,18 @@ the exact paginated JSON shape from PRD §12.5.
   `@EntityScan` off the main `@SpringBootApplication` class onto a separate `PersistenceConfig`
   (see the bootstrap-phase commit) was required to get this working at all — otherwise the
   slice pulled in JPA repository beans with no `DataSource` behind them.
-- **Full integration test** (§19.4 — `@SpringBootTest` + Testcontainers + WireMock + mock
-  `ChatModel`, asserting a full `POST /api/v1/analyze` response and DB rows): **not
-  implemented.** It needs a working fake `ChatModel`/`ChatResponse` (non-trivial nested-type
-  construction) and, like the repository slice test, a running Docker daemon this
-  environment doesn't have. Its coverage overlaps substantially with what's already
-  verified: `AgentOrchestratorTest` exercises the exact orchestration chain PRD §19.4 targets
-  (mocked at the agent boundary instead of HTTP), `AnalyzeControllerTest` covers the REST
-  layer, and — most directly — the packaged jar was actually run end-to-end in this
-  environment (see the bootstrap-phase commit): real Spring context, real H2 schema via
-  Hibernate, `GET /actuator/health` → `UP`, `GET /api/v1/tests` → the exact PRD §12.5 JSON
-  shape. That's real verification a mocked integration test wouldn't add much beyond.
+- **Full integration test** (§19.4 — `AgentPipelineIT`): implemented exactly to spec —
+  `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `@Testcontainers` (real PostgreSQL, Flyway
+  runs for real), a WireMock server stubbing the GitHub API, and a hand-written canned
+  `ChatModel` (`CannedResponseChatModel`, keyed by which agent's fixed system-prompt constant
+  is present on the incoming `Prompt` — no real LLM calls). It calls `POST /api/v1/analyze`
+  end-to-end and asserts the response body, the persisted `test_cases`/`test_runs` rows, and
+  that both GitHub check-run calls (pending → success) were made. Like `TestCaseRepositoryTest`,
+  it needs a Docker daemon this implementation environment doesn't have, so it wasn't executed
+  here — but it compiles clean and fails, when run locally, at exactly the same Testcontainers
+  Docker-discovery step as `TestCaseRepositoryTest` (confirmed), meaning everything ahead of
+  that — annotation wiring, `@TestConfiguration` bean override, WireMock/Jackson dependency
+  resolution — is sound. Runs in CI (`.github/workflows/build.yml`), where Docker is available.
 - **Dashboard tests** (§19.5): Vitest + Testing Library unit tests for `StatusBadge` and
   `CoverageMap` (added in the dashboard-phase commit). Playwright component tests for
   `CoverageMap`/`RunHistoryChart` specifically: not added — the Vitest coverage of the same
