@@ -67,10 +67,44 @@ provider block).
 ## CI
 
 `.github/workflows/build.yml` builds the dashboard, runs its Vitest suite, then builds and
-tests every Maven module against a real PostgreSQL service container. See
-`docs/consumer-workflow-example.yml` for the workflow a team calling QA Forge's API would add
-to their *own* repository (PRD §20.3) — it isn't meant to run in this repository, so it lives
-under `docs/` rather than `.github/workflows/`.
+tests every Maven module against a real PostgreSQL service container. It runs on every push
+and pull request, and is also invoked as a reusable workflow (`workflow_call`) by the release
+pipeline below. See `docs/consumer-workflow-example.yml` for the workflow a team calling QA
+Forge's API would add to their *own* repository (PRD §20.3) — it isn't meant to run in this
+repository, so it lives under `docs/` rather than `.github/workflows/`.
+
+## Shipping a release
+
+`.github/workflows/release.yml` is the ship-it pipeline: it re-runs the full CI gate, stamps
+the release version into every Maven module, builds and smoke-tests a container image, pushes
+it to `ghcr.io/<owner>/qa-forge`, and publishes a GitHub Release with the jar, a SHA-256
+checksum, and a CycloneDX SBOM attached. Both the jar and the image carry a signed build
+provenance attestation (`actions/attest-build-provenance`), verifiable with:
+
+```bash
+gh attestation verify qa-forge-bootstrap.jar --owner <owner>
+gh attestation verify oci://ghcr.io/<owner>/qa-forge:<version> --owner <owner>
+```
+
+Two ways to trigger a release:
+
+- **Push a tag**: `git tag v1.4.0 && git push origin v1.4.0`.
+- **Manual dispatch**: run the *Release* workflow from the Actions tab (or
+  `gh workflow run release.yml -f bump=patch`), picking `patch` / `minor` / `major` / `custom`.
+  The workflow computes the next version from the latest `vX.Y.Z` tag, creates and pushes that
+  tag itself, then proceeds — no local tagging needed.
+
+A release never ships unless the same Postgres-backed Maven + Vitest suite that runs on every
+PR passes first. The `publish-release` job runs under the `production` GitHub Environment, so
+you can add required reviewers there (Settings → Environments) if you want a manual approval
+gate before a build goes out; with no protection rules configured it's a no-op.
+
+The first push to GHCR creates the `qa-forge` package as **private** by default — link it to
+this repository and flip visibility in the package settings if it should be publicly pullable.
+
+Version numbers are derived from git tags at build time and are not committed back to
+`pom.xml` — the tree stays on `1.0.0-SNAPSHOT` between releases; `qa version` in a shipped jar
+reports the real released version via the manifest's `Implementation-Version`.
 
 ## CLI
 
