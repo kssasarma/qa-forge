@@ -12,6 +12,11 @@ COPY qa-forge-dashboard/ ./
 RUN npm run build
 
 FROM maven:3.9.9-eclipse-temurin-21 AS java-build
+# Set by the release workflow to the released semantic version (e.g. 1.4.0) so the packaged
+# jar's MANIFEST.MF Implementation-Version — and therefore `qa version` — reports the real
+# shipped version instead of the source tree's permanent 1.0.0-SNAPSHOT. Left empty for local
+# `docker compose up --build`, which just keeps the SNAPSHOT version.
+ARG APP_VERSION=""
 WORKDIR /workspace
 COPY pom.xml ./
 COPY qa-forge-domain/pom.xml qa-forge-domain/pom.xml
@@ -24,6 +29,9 @@ COPY qa-forge-application qa-forge-application
 COPY qa-forge-infrastructure qa-forge-infrastructure
 COPY qa-forge-bootstrap qa-forge-bootstrap
 COPY --from=dashboard-build /workspace/qa-forge-dashboard/../qa-forge-bootstrap/src/main/resources/static qa-forge-bootstrap/src/main/resources/static
+RUN if [ -n "$APP_VERSION" ]; then \
+      mvn -B -q versions:set -DnewVersion="$APP_VERSION" -DprocessAllModules=true -DgenerateBackupPoms=false; \
+    fi
 RUN mvn -B -q -pl qa-forge-domain,qa-forge-application,qa-forge-infrastructure,qa-forge-bootstrap -am package -DskipTests
 
 FROM eclipse-temurin:21.0.3_9-jre-jammy
